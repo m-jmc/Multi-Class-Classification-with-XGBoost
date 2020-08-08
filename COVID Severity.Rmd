@@ -1,5 +1,5 @@
 ---
-title: "COVID Severity"
+title: "README.md"
 output: 
   html_document:
     toc: true
@@ -97,7 +97,7 @@ plot(na.plot)
 
 ### Missing by Row
 
-```{r, warning=FALSE, echo=FALSE, fig.width=12, fig.height=12}
+```{r, warning=FALSE, echo=FALSE, fig.width=12, fig.height=8}
 
 na.row <- data %>%
             mutate(id = row_number()) %>%
@@ -400,7 +400,7 @@ geom_split_violin <- function(mapping = NULL, data = NULL, stat = "ydensity", po
 
 ### Violin 
 
-```{r, echo=FALSE, warning=FALSE, fig.width=12, fig.height=12}
+```{r, echo=FALSE, warning=FALSE, fig.width=10, fig.height=10}
 
 xgb_top <- tibble::rownames_to_column(importance_xgb$importance, "Feature") %>% 
                                           filter(Overall > 0.0) %>%
@@ -438,7 +438,7 @@ plot(xgb_top_plot)
 
 ### Density 
 
-```{r, echo=FALSE, warning=FALSE, fig.width=12, fig.height=12}
+```{r, echo=FALSE, warning=FALSE, fig.width=10, fig.height=10}
 
 xgb_top_dense <-positive %>%
                 subset(select = c("admission", xgb_top$Feature)) %>%
@@ -467,7 +467,7 @@ plot(xgb_top_dense)
 
 ### Box and Jitter 
 
-```{r, echo=FALSE, warning=FALSE, fig.width=12, fig.height=12}
+```{r, echo=FALSE, warning=FALSE, fig.width=12, fig.height=8}
 
 xgb_top_jitter <-positive %>%
                 subset(select = c("admission", xgb_top$Feature)) %>%
@@ -498,7 +498,7 @@ plot(xgb_top_jitter)
 
 ### Ridge
 
-```{r, echo=FALSE, warning=FALSE, fig.width=12, fig.height=12}
+```{r, echo=FALSE, warning=FALSE, fig.width=12, fig.height=8}
 
 xgb_top_ridge <-positive %>%
                 subset(select = c("admission", xgb_top$Feature)) %>%
