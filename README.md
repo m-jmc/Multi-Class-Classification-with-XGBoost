@@ -117,7 +117,7 @@ Building our recipes DNA to perform the following steps: <br>
 - Center and scale all numeric variables (which may have already been performed on the original data set but wont hurt) <br>
 - One-hot encode remaining nominal features <br>
 - Once the recipe is created, we prep the sample to estimate the outcome, then bake our training and test samples. <br>
-- The preped mRNA is processes ("pro") the training set to create the protrain df... protrain... like protein, get it? Cause the mRNA...<br>
+- The preped mRNA then processes ("pro") the training set to create the protrain df... protrain... like protein, get it? Cause the mRNA...<br>
 
 Next steps will be to build this directly into my caret training process, but I ran into issues when evaluating the prediction. <br>
 
