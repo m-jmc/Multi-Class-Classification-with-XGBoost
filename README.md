@@ -34,12 +34,7 @@
 **Limitations / Analysis not performed:** 
 
 *	As mentioned, patient demographic information was understandably absent. Bias metrics were calculated using synthetic data. 
-*	Patients were only represented once within the dataset and did not contain any measure of movement throughout phases of care (no option for “time-to-event” predictions).
-
-*	A result of missing data and effort to avoid imputation of patient lab values the following methods were not used:
-    +	Principle component analysis 
-    +	Feature correlations
-        
+*	Patients were only represented once within the dataset and did not contain any measure of movement throughout phases of care (no option for “time-to-event” predictions).        
 *	Evaluation of continuous variables using Restricted Cubic Splines
 <br>
 
