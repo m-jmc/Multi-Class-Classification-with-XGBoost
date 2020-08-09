@@ -10,19 +10,19 @@
 *	No data leakage.
 
 *	Introduction of the recipes package:
-+	Removal of near zero, and zero variance predictors
-+	Step integer ordinality encoding of nominal predictors
-+	Center and Scaling
-+	One-hot encoding
+  +	Removal of near zero, and zero variance predictors
+  +	Step integer ordinality encoding of nominal predictors
+  +	Center and Scaling
+  +	One-hot encoding
 
 *	XGBoost:
-+	Hyperparameter tuning using grid search.
-+	Caret multi-class summary.
-+	10-fold cross validation.
-+	SMOTE subsampling for improved imbalanced classification.
+  +	Hyperparameter tuning using grid search.
+  +	Caret multi-class summary.
+  +	10-fold cross validation.
+  +	SMOTE subsampling for improved imbalanced classification.
 
 *	Simulated Bias detection:
-+	Pending: Evaluation of prediction across synthetic protected classes
+  +	Pending: Evaluation of prediction across synthetic protected classes
 
 <br>
 
