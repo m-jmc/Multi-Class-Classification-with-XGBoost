@@ -2,6 +2,36 @@
 
 # COVID Severity
 
+**Overview:** In this project my goal was to identify metabolic differences positive COVID-19 patients which might indicate increased acuity. It represents a step forward from my previous projects in code technique and extensibility, better data hygiene and elimination of data leakage, greater command of the Caret modeling process, and (still in process) more robust outcome evaluation.
+<br>
+**Highlights:**
+*	Missing Data Visualizations.
+*	No data leakage.
+*	Introduction of the recipes package:
++	Removal of near zero, and zero variance predictors
++	Step integer ordinality encoding of nominal predictors
++	Center and Scaling
++	One-hot encoding
+*	XGBoost:
++	Hyperparameter tuning using grid search.
++	Caret multi-class summary.
++	10-fold cross validation.
++	SMOTE subsampling for improved imbalanced classification.
+*	Simulated Bias detection:
++	Pending: Evaluation of prediction across synthetic protected classes
+<br>
+**Outcome:** The resulting model was able to achieve acceptable accuracy owing to high sensitivity of the dominate class (Outpatient treatment patients). However, minority classification performance was poor, and the model failed to achieve statistical significance (Floor and ICU patients). I believe this to be a result of poor representation within subsamples, limited number of features, and limited nature of the data set. 
+<br>
+**Limitations / Analysis not performed:** 
+*	As mentioned, patient demographic information was understandably absent. Bias metrics were calculated using synthetic data. 
+*	Patients were only represented once within the dataset and did not contain any measure of movement throughout phases of care (no option for “time-to-event” predictions). 
+*	A result of missing data and effort to avoid imputation of patient lab values the following methods were not used:
++	Principle component analysis 
++	Feature correlations
+*	Evaluation of continuous variables using Restricted Cubic Splines
+<br>
+
+
 ## About the Data
 
 This dataset contains anonymized data from patients seen at the Hospital Israelita Albert Einstein, at São Paulo, Brazil, and who had samples collected to perform the SARS-CoV-2 RT-PCR and additional laboratory tests during a visit to the hospital. All data were anonymized following the best international practices and recommendations. All clinical data were standardized to have a mean of zero and a unit standard deviation. We aimed at including laboratory tests more commonly order during a visit to the emergency room
