@@ -9,12 +9,7 @@
 
 *	Missing Data Visualizations.
 *	No data leakage.
-
 *	Introduction of the recipes package:
-    +	Removal of near zero, and zero variance predictors
-    +	Step integer ordinality encoding of nominal predictors
-    +	Center and Scaling
-    +	One-hot encoding
 
 *	XGBoost:
     +	Hyperparameter tuning using grid search.
