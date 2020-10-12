@@ -8,7 +8,7 @@
 **Highlights:**
 
 *	Missing Data Visualizations.
-*	Introduction of the recipes package:
+*	Introduction of the recipes package.
 
 *	XGBoost:
     +	Hyperparameter tuning using grid search.
