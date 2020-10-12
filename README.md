@@ -2,7 +2,7 @@
 
 # COVID Severity
 
-**Overview:** In this project my goal was to identify metabolic differences positive COVID-19 patients which might indicate increased acuity. It represents a step forward from my previous projects in code technique and extensibility, better data hygiene and elimination of data leakage, greater command of the Caret modeling process, and (still in process) more robust outcome evaluation.
+**Overview:** In this project my goal was to identify metabolic differences positive COVID-19 patients which might indicate increased acuity. It represents a step forward from my previous projects in code technique and extensibility, better data hygiene / elimination of data leakage, greater command of the Caret modeling process, and (still in process) more robust outcome evaluation.
 <br>
 
 **Highlights:**
