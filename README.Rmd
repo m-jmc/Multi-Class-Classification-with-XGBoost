@@ -636,23 +636,28 @@ pca <- prcomp(protrain_s)
 
 ```
 
-### Biplot
 
-Rework using ggbiplot
+### Variance Explained / Scree 
+
+Proportion of Variance Explained (PVE) identifies the optimal number of PC's based on the variability explained. Here, PVE (aka Scree plot) and CVE (Cumulative variance explained) are plotted. 
 
 ```{r, echo=FALSE}
 
-# need to rework labels here
+eig <- pca$sdev %>%
+       as.vector() %>%
+       .^2
 
-# ggbiplot(pca,
-#          ellipse = TRUE,
-#          #choices=c(2,3), 
-#          labels=protrain_s$admission,
-#          groups=protrain_s$COVID_X1) 
+plot_pca <- data.frame(PC = pca$sdev %>% seq_along(),
+                       Proportion = eig/sum(eig),
+                       Cumulative = cumsum(eig)/sum(eig)) %>%
+                       tidyr::gather(metric, Proportion, -PC) %>%
+                       ggplot(aes(PC, Proportion)) +
+                              geom_point() +
+                              facet_wrap(~ metric, ncol = 1, scales = "free")
 
+plot(plot_pca)
 
 ```
-
 
 ### Eigenvalue Criterion 
 
@@ -675,23 +680,24 @@ which(eig >= 1)
 
 ```
 
-### Variance Explained / Scree 
 
-Proportion of Variance Explained (PVE) identifies the optimal number of PC's based on the variability explained. Here, PVE (aka Scree plot) and CVE (Cumulative variance explained) are plotted. 
+### Biplot
+
+Rework using ggbiplot
 
 ```{r, echo=FALSE}
 
-plot_pca <- data.frame(PC = pca$sdev %>% seq_along(),
-                       Proportion = eig/sum(eig),
-                       Cumulative = cumsum(eig)/sum(eig)) %>%
-                       tidyr::gather(metric, Proportion, -PC) %>%
-                       ggplot(aes(PC, Proportion)) +
-                              geom_point() +
-                              facet_wrap(~ metric, ncol = 1, scales = "free")
+# need to rework labels here
 
-plot(plot_pca)
+# ggbiplot(pca,
+#          ellipse = TRUE,
+#          #choices=c(2,3), 
+#          labels=protrain_s$admission,
+#          groups=protrain_s$COVID_X1) 
+
 
 ```
+
 
 ## Model {.tabset .tabset-fade}
 
