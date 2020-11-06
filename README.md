@@ -1,13 +1,3 @@
----
-title: "README.md"
-output: 
-  html_document:
-    toc: true
-    toc_depth: 3
-    keep_md: TRUE
----
-
-
 
 # COVID Severity
 
