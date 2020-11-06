@@ -1,0 +1,222 @@
+"0",""
+"0","# Theme brewer greens "
+"0","# Green: #31a354"
+"0",""
+"0",""
+"0","library(tidyverse)"
+"2","Registered S3 methods overwritten by 'dbplyr':
+  method         from
+  print.tbl_lazy     
+  print.tbl_sql      
+"
+"2","[37m── [1mAttaching packages[22m ───────────────────────────────────────────────────────────────────── tidyverse 1.3.0 ──[39m
+"
+"2","[37m[32m✓[37m [34mggplot2[37m 3.3.2     [32m✓[37m [34mpurrr  [37m 0.3.4
+[32m✓[37m [34mtibble [37m 3.0.4     [32m✓[37m [34mdplyr  [37m 1.0.2
+[32m✓[37m [34mtidyr  [37m 1.1.2     [32m✓[37m [34mstringr[37m 1.4.0
+[32m✓[37m [34mreadr  [37m 1.4.0     [32m✓[37m [34mforcats[37m 0.5.0[39m
+"
+"2","[37m── [1mConflicts[22m ──────────────────────────────────────────────────────────────────────── tidyverse_conflicts() ──
+[31mx[37m [34mdplyr[37m::[32mfilter()[37m masks [34mstats[37m::filter()
+[31mx[37m [34mdplyr[37m::[32mlag()[37m    masks [34mstats[37m::lag()[39m
+"
+"0","library(tidymodels)"
+"2","[37m── [1mAttaching packages[22m ──────────────────────────────────────────────────────────────────── tidymodels 0.1.1 ──[39m
+"
+"2","[37m[32m✓[37m [34mbroom    [37m 0.7.2      [32m✓[37m [34mrecipes  [37m 0.1.14
+[32m✓[37m [34mdials    [37m 0.0.9      [32m✓[37m [34mrsample  [37m 0.0.8 
+[32m✓[37m [34minfer    [37m 0.5.3      [32m✓[37m [34mtune     [37m 0.1.1 
+[32m✓[37m [34mmodeldata[37m 0.1.0      [32m✓[37m [34mworkflows[37m 0.2.1 
+[32m✓[37m [34mparsnip  [37m 0.1.4      [32m✓[37m [34myardstick[37m 0.0.7 [39m
+"
+"2","[37m── [1mConflicts[22m ─────────────────────────────────────────────────────────────────────── tidymodels_conflicts() ──
+[31mx[37m [34mscales[37m::[32mdiscard()[37m masks [34mpurrr[37m::discard()
+[31mx[37m [34mdplyr[37m::[32mfilter()[37m   masks [34mstats[37m::filter()
+[31mx[37m [34mrecipes[37m::[32mfixed()[37m  masks [34mstringr[37m::fixed()
+[31mx[37m [34mdplyr[37m::[32mlag()[37m      masks [34mstats[37m::lag()
+[31mx[37m [34myardstick[37m::[32mspec()[37m masks [34mreadr[37m::spec()
+[31mx[37m [34mrecipes[37m::[32mstep()[37m   masks [34mstats[37m::step()[39m
+"
+"0","library(caret)"
+"2","Loading required package: lattice
+"
+"2","Registered S3 method overwritten by 'data.table':
+  method           from
+  print.data.table     
+"
+"2","
+Attaching package: ‘caret’
+
+"
+"2","The following objects are masked from ‘package:yardstick’:
+
+    precision, recall, sensitivity, specificity
+
+"
+"2","The following object is masked from ‘package:purrr’:
+
+    lift
+
+"
+"0","library(xgboost)"
+"2","
+Attaching package: ‘xgboost’
+
+"
+"2","The following object is masked from ‘package:dplyr’:
+
+    slice
+
+"
+"0","library(h2o) #Stats: cor, sd, var, The following objects are masked from �package:base�:"
+"2","
+----------------------------------------------------------------------
+
+Your next step is to start H2O:
+    > h2o.init()
+
+For H2O package documentation, ask for help:
+    > ??h2o
+
+After starting H2O, you can use the Web UI at http://localhost:54321
+For more information visit https://docs.h2o.ai
+
+----------------------------------------------------------------------
+
+"
+"2","
+Attaching package: ‘h2o’
+
+"
+"2","The following objects are masked from ‘package:stats’:
+
+    cor, sd, var
+
+"
+"2","The following objects are masked from ‘package:base’:
+
+    &&, %*%, %in%, ||, apply, as.factor, as.numeric, colnames, colnames<-, ifelse, is.character,
+    is.factor, is.numeric, log, log10, log1p, log2, round, signif, trunc
+
+"
+"0","    #%*%, %in%, &&, ||, apply, as.factor, as.numeric, colnames, colnames<-, ifelse, is.character,"
+"0","    #is.factor, is.numeric, log, log10, log1p, log2, round, signif, trunc"
+"0","library(visdat)"
+"0","library(viridis)"
+"2","Loading required package: viridisLite
+"
+"2","
+Attaching package: ‘viridis’
+
+"
+"2","The following object is masked from ‘package:scales’:
+
+    viridis_pal
+
+"
+"0","library(reshape2)"
+"2","
+Attaching package: ‘reshape2’
+
+"
+"2","The following object is masked from ‘package:tidyr’:
+
+    smiths
+
+"
+"0","library(RColorBrewer)"
+"0","library(ggridges)"
+"0","library(DMwR)"
+"2","Loading required package: grid
+"
+"2","Registered S3 method overwritten by 'quantmod':
+  method            from
+  as.zoo.data.frame zoo 
+"
+"2","
+Attaching package: ‘DMwR’
+
+"
+"2","The following object is masked from ‘package:broom’:
+
+    bootstrap
+
+"
+"0","library(MLmetrics) # masks caret::MAE/RMSE, base::recall"
+"2","
+Attaching package: ‘MLmetrics’
+
+"
+"2","The following objects are masked from ‘package:caret’:
+
+    MAE, RMSE
+
+"
+"2","The following object is masked from ‘package:base’:
+
+    Recall
+
+"
+"0","library(e1071)"
+"2","
+Attaching package: ‘e1071’
+
+"
+"2","The following object is masked from ‘package:tune’:
+
+    tune
+
+"
+"0","#library(VIM) #hides dcast and melt from reshape2, additional from dplyr/lubridate that I'm not using, prepare from recipies"
+"0","#library(mice) #hides cbind and rbind used in the split violin plot"
+"0",""
+"0",""
+"0","#data <- read_csv(""UNCOVER/einstein/diagnosis-of-covid-19-and-its-clinical-spectrum.csv"")"
+"0","data <- read_csv(""diagnosis-of-covid-19-and-its-clinical-spectrum.csv"") %>% "
+"0","              dplyr::rename(COVID = sars_cov_2_exam_result,"
+"0","                       floor = patient_addmited_to_regular_ward_1_yes_0_no,"
+"0","                       step = patient_addmited_to_semi_intensive_unit_1_yes_0_no,"
+"0","                       icu = patient_addmited_to_intensive_care_unit_1_yes_0_no)"
+"2","
+[36m──[39m [1m[1mColumn specification[1m[22m [36m──────────────────────────────────────────────────────────────────────────────────────[39m
+cols(
+  .default = col_double(),
+  patient_id = [31mcol_character()[39m,
+  sars_cov_2_exam_result = [31mcol_character()[39m,
+  patient_addmited_to_regular_ward_1_yes_0_no = [33mcol_logical()[39m,
+  patient_addmited_to_semi_intensive_unit_1_yes_0_no = [33mcol_logical()[39m,
+  patient_addmited_to_intensive_care_unit_1_yes_0_no = [33mcol_logical()[39m,
+  respiratory_syncytial_virus = [31mcol_character()[39m,
+  influenza_a = [31mcol_character()[39m,
+  influenza_b = [31mcol_character()[39m,
+  parainfluenza_1 = [31mcol_character()[39m,
+  coronavirusnl63 = [31mcol_character()[39m,
+  rhinovirus_enterovirus = [31mcol_character()[39m,
+  mycoplasma_pneumoniae = [33mcol_logical()[39m,
+  coronavirus_hku1 = [31mcol_character()[39m,
+  parainfluenza_3 = [31mcol_character()[39m,
+  chlamydophila_pneumoniae = [31mcol_character()[39m,
+  adenovirus = [31mcol_character()[39m,
+  parainfluenza_4 = [31mcol_character()[39m,
+  coronavirus229e = [31mcol_character()[39m,
+  coronavirusoc43 = [31mcol_character()[39m,
+  inf_a_h1n1_2009 = [31mcol_character()[39m
+  # ... with 28 more columns
+)
+[36mℹ[39m Use [38;5;251m[48;5;235m[38;5;251m[48;5;235m`spec()`[48;5;235m[38;5;251m[49m[39m for the full column specifications.
+
+"
+"2","8 parsing failures.
+ row           col           expected               actual                                                  file
+2498 lipase_dosage 1/0/T/F/TRUE/FALSE -1.192226767539978   'diagnosis-of-covid-19-and-its-clinical-spectrum.csv'
+3122 lipase_dosage 1/0/T/F/TRUE/FALSE -0.29455015063285828 'diagnosis-of-covid-19-and-its-clinical-spectrum.csv'
+3621 lipase_dosage 1/0/T/F/TRUE/FALSE -0.35065492987632751 'diagnosis-of-covid-19-and-its-clinical-spectrum.csv'
+4115 lipase_dosage 1/0/T/F/TRUE/FALSE 1.725222229957581    'diagnosis-of-covid-19-and-its-clinical-spectrum.csv'
+4347 lipase_dosage 1/0/T/F/TRUE/FALSE -0.35065492987632751 'diagnosis-of-covid-19-and-its-clinical-spectrum.csv'
+.... ............. .................. .................... .....................................................
+See problems(...) for more details.
+"
+"0","data$urine_ph <- as.numeric(data$urine_ph)"
+"2","NAs introduced by coercion"
+"0","data.save <- data"
+"0",""

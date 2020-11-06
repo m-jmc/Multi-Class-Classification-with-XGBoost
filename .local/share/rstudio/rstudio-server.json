@@ -1,0 +1,9 @@
+{
+    "context_id": "003A6BA7",
+    "theme": {
+        "name": "Vibrant Ink",
+        "url": "theme/default/vibrant_ink.rstheme",
+        "isDark": true
+    },
+    "error_handler_type": "traceback"
+}

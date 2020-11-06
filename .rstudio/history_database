@@ -1,0 +1,901 @@
+0:split_status  <- initial_split(covid_status,
+0:prop = 0.7,
+0:strata = "COVID")
+0:train_s  <- training(split_status)
+0:test_s   <- testing(split_status)
+0:View(covid_status)
+0:covid_status$urine_leukocytes <- NULL
+0:# specify admission as an outcome column
+0:dna_s <- recipe(COVID ~ ., data = covid_status) %>%
+0:step_nzv(all_predictors())  %>%
+0:step_bagimpute(all_numeric()) %>%
+0:step_integer(matches("urine_color|urine_aspect|urine_hemoglobin")) %>%
+0:step_center(all_numeric(), -all_outcomes()) %>%
+0:step_scale(all_numeric(), -all_outcomes()) %>%
+0:step_dummy(all_nominal(), one_hot = TRUE)
+0:mrna_s <- prep(dna_s, training = train_s)
+0:# pro = processed, resulting in "pro-train", like protein, get it?
+0:protrain_s <- bake(mrna_s, new_data = train_s)
+0:protest_s <- bake(mrna_s, new_data = test_s)
+0:View(test_s)
+0:View(protrain_s)
+0:pca <- prcomp(protrain_s)
+0:View(protrain_s)
+0:View(protest_s)
+0:View(protrain_s)
+0:# Selecting non numeric columns into a df, looking for features which may have ordinality
+0:train_s_nominal <- protrain_s %>% dplyr::select_if(~!is.numeric(.x))
+0:train_s_numeric <- protrain_s %>% dplyr::select_if(is.numeric(.x))
+0:train_s_numeric <- protrain_s %>% dplyr::select_if(~is.numeric(.x))
+0:View(train_s_numeric)
+0:View(covid_status)
+0:# Selecting non numeric columns into a df, looking for features which may have ordinality
+0:rm(train_s_nominal,train_s_numeric)
+0:# specify admission as an outcome column
+0:dna_s <- recipe(COVID ~ ., data = covid_status) %>%
+0:step_nzv(all_predictors())  %>%
+0:step_bagimpute(all_numeric()) %>%
+0:step_integer(matches("urine_color|urine_aspect|urine_hemoglobin")) %>%
+0:step_center(all_numeric(), -all_outcomes()) %>%
+0:step_scale(all_numeric(), -all_outcomes()) %>%
+0:step_dummy(all_nominal(), one_hot = TRUE)
+0:mrna_s <- prep(dna_s, training = train_s)
+0:# pro = processed, resulting in "pro-train", like protein, get it?
+0:protrain_s <- bake(mrna_s, new_data = train_s)
+0:protest_s <- bake(mrna_s, new_data = test_s)
+0:View(protrain_s)
+0:View(covid_status)
+0:View(train_s)
+0:View(protest_s)
+0:View(protrain_s)
+0:# specify admission as an outcome column
+0:dna_s <- recipe(COVID ~ ., data = covid_status) %>%
+0:step_nzv(all_predictors())  %>%
+0:step_bagimpute(all_predictors()) %>%
+0:step_integer(matches("urine_color|urine_aspect|urine_hemoglobin")) %>%
+0:step_center(all_numeric(), -all_outcomes()) %>%
+0:step_scale(all_numeric(), -all_outcomes()) %>%
+0:step_dummy(all_nominal(), one_hot = TRUE)
+0:mrna_s <- prep(dna_s, training = train_s)
+0:# pro = processed, resulting in "pro-train", like protein, get it?
+0:protrain_s <- bake(mrna_s, new_data = train_s)
+0:protest_s <- bake(mrna_s, new_data = test_s)
+0:View(protest_s)
+0:pca <- prcomp(protrain_s)
+0:summary(pca)
+0:View(pca)
+0:eig <- pca$sdev %>%
+0:as.vector() %>%
+0:.^2
+0:# Sum of all eigenvalues equals number of variables
+0:sum(eig)
+0:# Find PCs where the sum of eigenvalues is greater than or equal to 1
+0:which(eig >= 1)
+0:#compute standard deviation of each principal component
+0:std_dev <- pca$sdev
+0:#compute variance
+0:pr_var <- std_dev^2
+0:#proportion of variance explained
+0:prop_varex <- pr_var/sum(pr_var)
+0:#scree plot
+0:plot(prop_varex, xlab = "Principal Component",
+0:ylab = "Proportion of Variance Explained",
+0:type = "b")
+0:#proportion of variance explained
+0:prop_varex_2 <- eig/sum(eig)
+0:View(protrain_s)
+0:ggbiplot(pca,
+0:ellipse = TRUE,
+0:#choices=c(2,3),
+0:labels=protrain_s$admission,
+0:groups=protrain_s$COVID_X1)
+0:View(pca)
+0:plot(cumsum(prop_varex), xlab = "Principal Component",
+0:ylab = "Cumulative Proportion of Variance Explained",
+0:type = "b")
+0:#scree plot
+0:plot(prop_varex, xlab = "Principal Component",
+0:ylab = "Proportion of Variance Explained",
+0:type = "b")
+0:summary.pca
+0:summary.summary.prcomp
+0:summary.prcomp
+0:rbind(
+0:SD = sqrt(eig),
+0:Proportion = eig/sum(eig),
+0:Cumulative = cumsum(eig)/sum(eig))
+0:SD = sqrt(eig),
+0:SD = sqrt(eig),
+0:plot_pca <- rbind(
+0:SD = sqrt(eig),
+0:Proportion = eig/sum(eig),
+0:Cumulative = cumsum(eig)/sum(eig))
+0:plot_pca <- data.frame(
+0:SD = sqrt(eig),
+0:Proportion = eig/sum(eig),
+0:Cumulative = cumsum(eig)/sum(eig))
+0:View(plot_pca)
+0:SD = sqrt(eig),
+0:plot_pca <- data.frame(SD = sqrt(eig),
+0:Proportion = eig/sum(eig),
+0:Cumulative = cumsum(eig)/sum(eig)) %>%
+0:tidyr::gather(metric, Proportion, -SD) %>%
+0:ggplot(aes(SD, Proportion)) +
+0:geom_point() +
+0:facet_wrap(~ metric, ncol = 1, scales = "free")
+0:plot(plot_pca)
+0:View(pca)
+0:plot_pca <- data.frame(PC = pca$sdev %>% seq_along(),
+0:Proportion = eig/sum(eig),
+0:Cumulative = cumsum(eig)/sum(eig)) %>%
+0:tidyr::gather(metric, Proportion, -SD) %>%
+0:ggplot(aes(SD, Proportion)) +
+0:geom_point() +
+0:facet_wrap(~ metric, ncol = 1, scales = "free")
+0:plot_pca <- data.frame(PC = pca$sdev %>% seq_along(),
+0:Proportion = eig/sum(eig),
+0:Cumulative = cumsum(eig)/sum(eig)) %>%
+0:tidyr::gather(metric, Proportion, -PC) %>%
+0:ggplot(aes(PC, Proportion)) +
+0:geom_point() +
+0:facet_wrap(~ metric, ncol = 1, scales = "free")
+0:plot(plot_pca)
+0:plot_pca <- data.frame(PC = pca$sdev %>% seq_along(),
+0:Proportion = eig/sum(eig),
+0:Cumulative = cumsum(eig)/sum(eig)) %>%
+0:tidyr::gather(metric, Proportion, -PC) #%>%
+0:View(plot_pca)
+0:plot_pca <- data.frame(PC = pca$sdev %>% seq_along(),
+0:Proportion = eig/sum(eig),
+0:Cumulative = cumsum(eig)/sum(eig)) %>%
+0:tidyr::gather(metric, Proportion, -PC) %>%
+0:ggplot(aes(PC, Proportion)) +
+0:geom_point() +
+0:facet_wrap(~ metric, ncol = 1, scales = "free")
+0:plot(plot_pca)
+0:View(pca)
+0:train_pca <- data.frame(covid = protrain_s$COVID_X1, pca$x)
+0:View(train_pca)
+0:# limit to only the first 17 PC's (per eigenvalue criterion)
+0:train_pca <- train_pca[,1:17]
+0:# limit to only the first 17 PC's (per eigenvalue criterion)
+0:train_pca <- train_pca[,1:18]
+0:train_pca <- data.frame(covid = protrain_s$COVID_X1, pca$x)
+0:# limit to only the first 17 PC's (per eigenvalue criterion)
+0:train_pca <- train_pca[,1:18]
+0:#transform test into PCA
+0:test_pca <- predict(pca, newdata = protest_s)
+0:test_pca <- as.data.frame(test_pca)
+0:View(test_pca)
+0:test_pca <- data.frame(covid = protrain_s$COVID_X1,pca_test$x)
+0:test_pca <- data.frame(covid = protrain_s$COVID_X1, pca_test)
+0:test_pca <- as.data.frame(covid = protrain_s$COVID_X1, test_pca)
+0:View(test_pca)
+0:#transform preprocessed test dataframe into PCA
+0:test_pca <- predict(pca, newdata = protest_s)
+0:test_pca <- as.data.frame(covid = protrain_s$COVID_X1, test_pca)
+0:View(test_pca)
+0:test_pca <- as.data.frame(covid = protest_s$COVID_X1, test_pca)
+0:View(test_pca)
+0:View(test_pca)
+0:#data <- read_csv("UNCOVER/einstein/diagnosis-of-covid-19-and-its-clinical-spectrum.csv")
+0:data <- read_csv("diagnosis-of-covid-19-and-its-clinical-spectrum.csv") %>%
+0:dplyr::rename(COVID = sars_cov_2_exam_result,
+0:floor = patient_addmited_to_regular_ward_1_yes_0_no,
+0:step = patient_addmited_to_semi_intensive_unit_1_yes_0_no,
+0:icu = patient_addmited_to_intensive_care_unit_1_yes_0_no)
+0:library(ggbiplot) # masks mutate, rename, summarise, arrange
+0:pca <- prcomp(protrain_s)
+0:# Select admitted patients only
+0:covid_status <- data %>%
+0:filter(floor == "TRUE" | step == "TRUE" | icu == "TRUE")
+0:#recode admission and COVID status columns
+0:covid_status$admission <- base::ifelse(covid_status$floor == "TRUE", "1",
+0:base::ifelse(covid_status$step == "TRUE", "2",
+0:base::ifelse(covid_status$icu == "TRUE", "2", "0"))) %>% base::as.numeric()
+0:covid_status$COVID <- base::ifelse(covid_status$COVID == "positive", "1","0")
+0:# remove the old floor/step/icu columns, then reorder the columns to put covid target first
+0:covid_status <- covid_status %>%
+0:dplyr::select(-floor,
+0:-step,
+0:-icu,
+0:-patient_id) %>%
+0:dplyr::select(COVID,
+0:everything())
+0:# Subset into covid stratified training and testing sets
+0:set.seed(333)
+0:split_status  <- initial_split(covid_status,
+0:prop = 0.7,
+0:strata = "COVID")
+0:train_s  <- training(split_status)
+0:test_s   <- testing(split_status)
+0:# Double check why Urine Leuko is causing issues
+0:covid_status$urine_leukocytes <- NULL
+0:# specify admission as an outcome column
+0:dna_s <- recipe(COVID ~ ., data = covid_status) %>%
+0:step_nzv(all_predictors())  %>%
+0:step_bagimpute(all_predictors()) %>%
+0:step_integer(matches("urine_color|urine_aspect|urine_hemoglobin")) %>%
+0:step_center(all_numeric(), -all_outcomes()) %>%
+0:step_scale(all_numeric(), -all_outcomes()) %>%
+0:step_dummy(all_nominal(), one_hot = TRUE)
+0:mrna_s <- prep(dna_s, training = train_s)
+0:# pro = processed, resulting in "pro-train", like protein, get it?
+0:protrain_s <- bake(mrna_s, new_data = train_s)
+0:protest_s <- bake(mrna_s, new_data = test_s)
+0:library(ggbiplot) # masks mutate, rename, summarise, arrange
+0:pca <- prcomp(protrain_s)
+0:summary(pca)
+0:# need to rework labels here
+0:ggbiplot(pca,
+0:ellipse = TRUE,
+0:#choices=c(2,3),
+0:labels=protrain_s$admission,
+0:groups=protrain_s$COVID_X1)
+0:# Compute eigenvalues
+0:eig <- pca$sdev %>%
+0:as.vector() %>%
+0:.^2
+0:# Sum of all eigenvalues equals number of variables
+0:#sum(eig)
+0:## [1] 42
+0:# Find PCs where the sum of eigenvalues is greater than or equal to 1
+0:which(eig >= 1)
+0:plot_pca <- data.frame(PC = pca$sdev %>% seq_along(),
+0:Proportion = eig/sum(eig),
+0:Cumulative = cumsum(eig)/sum(eig)) %>%
+0:tidyr::gather(metric, Proportion, -PC) %>%
+0:ggplot(aes(PC, Proportion)) +
+0:geom_point() +
+0:facet_wrap(~ metric, ncol = 1, scales = "free")
+0:plot(plot_pca)
+0:train_pca <- data.frame(covid = protrain_s$COVID_X1, pca$x)
+0:View(train_pca)
+0:#transform preprocessed test dataframe into PCA
+0:test_pca <- predict(pca, newdata = protest_s)
+0:View(train_pca)
+0:# limit to only the first 16 PC's (per eigenvalue criterion)
+0:train_pca <- train_pca[,1:17]
+0:test_pca <- test_pca[1:17]
+0:#transform preprocessed test dataframe into PCA
+0:test_pca <- predict(pca, newdata = protest_s)
+0:View(train_pca)
+0:# limit to only the first 16 PC's (per eigenvalue criterion)
+0:train_pca <- train_pca[,1:17]
+0:test_pca <- test_pca[,1:17]
+0:View(test_pca)
+0:View(test_pca)
+0:#transform preprocessed test dataframe into PCA
+0:test_pca <- predict(pca, newdata = protest_s)
+0:View(test_pca)
+0:train_pca <- data.frame(covid = protrain_s$COVID_X1, pca$x)
+0:#transform preprocessed test dataframe into PCA
+0:test_pca <- predict(pca, newdata = protest_s)
+0:#data <- read_csv("UNCOVER/einstein/diagnosis-of-covid-19-and-its-clinical-spectrum.csv")
+0:data <- read_csv("diagnosis-of-covid-19-and-its-clinical-spectrum.csv") %>%
+0:dplyr::rename(COVID = sars_cov_2_exam_result,
+0:floor = patient_addmited_to_regular_ward_1_yes_0_no,
+0:step = patient_addmited_to_semi_intensive_unit_1_yes_0_no,
+0:icu = patient_addmited_to_intensive_care_unit_1_yes_0_no)
+0:data$urine_ph <- as.numeric(data$urine_ph)
+0:# Select admitted patients only
+0:covid_status <- data %>%
+0:filter(floor == "TRUE" | step == "TRUE" | icu == "TRUE")
+0:#recode admission and COVID status columns
+0:covid_status$admission <- base::ifelse(covid_status$floor == "TRUE", "1",
+0:base::ifelse(covid_status$step == "TRUE", "2",
+0:base::ifelse(covid_status$icu == "TRUE", "2", "0"))) %>% base::as.numeric()
+0:covid_status$COVID <- base::ifelse(covid_status$COVID == "positive", "1","0")
+0:# remove the old floor/step/icu columns, then reorder the columns to put covid target first
+0:covid_status <- covid_status %>%
+0:dplyr::select(-floor,
+0:-step,
+0:-icu,
+0:-patient_id) %>%
+0:dplyr::select(COVID,
+0:everything())
+0:# Subset into covid stratified training and testing sets
+0:set.seed(333)
+0:split_status  <- initial_split(covid_status,
+0:prop = 0.7,
+0:strata = "COVID")
+0:train_s  <- training(split_status)
+0:test_s   <- testing(split_status)
+0:# Double check why Urine Leuko is causing issues
+0:covid_status$urine_leukocytes <- NULL
+0:# specify admission as an outcome column
+0:dna_s <- recipe(COVID ~ ., data = covid_status) %>%
+0:step_nzv(all_predictors())  %>%
+0:step_bagimpute(all_predictors()) %>%
+0:step_integer(matches("urine_color|urine_aspect|urine_hemoglobin")) %>%
+0:step_center(all_numeric(), -all_outcomes()) %>%
+0:step_scale(all_numeric(), -all_outcomes()) %>%
+0:step_dummy(all_nominal(), one_hot = TRUE)
+0:mrna_s <- prep(dna_s, training = train_s)
+0:# pro = processed, resulting in "pro-train", like protein, get it?
+0:protrain_s <- bake(mrna_s, new_data = train_s)
+0:protest_s <- bake(mrna_s, new_data = test_s)
+0:library(ggbiplot) # masks mutate, rename, summarise, arrange
+0:pca <- prcomp(protrain_s)
+0:summary(pca)
+0:# need to rework labels here
+0:ggbiplot(pca,
+0:ellipse = TRUE,
+0:#choices=c(2,3),
+0:labels=protrain_s$admission,
+0:groups=protrain_s$COVID_X1)
+0:# Compute eigenvalues
+0:eig <- pca$sdev %>%
+0:as.vector() %>%
+0:.^2
+0:# Sum of all eigenvalues equals number of variables
+0:#sum(eig)
+0:## [1] 42
+0:# Find PCs where the sum of eigenvalues is greater than or equal to 1
+0:which(eig >= 1)
+0:set.seed(333)
+0:pca <- prcomp(protrain_s)
+0:summary(pca)
+0:# Compute eigenvalues
+0:eig <- pca$sdev %>%
+0:as.vector() %>%
+0:.^2
+0:# Sum of all eigenvalues equals number of variables
+0:#sum(eig)
+0:## [1] 42
+0:# Find PCs where the sum of eigenvalues is greater than or equal to 1
+0:which(eig >= 1)
+0:plot_pca <- data.frame(PC = pca$sdev %>% seq_along(),
+0:Proportion = eig/sum(eig),
+0:Cumulative = cumsum(eig)/sum(eig)) %>%
+0:tidyr::gather(metric, Proportion, -PC) %>%
+0:ggplot(aes(PC, Proportion)) +
+0:geom_point() +
+0:facet_wrap(~ metric, ncol = 1, scales = "free")
+0:plot(plot_pca)
+0:train_pca <- data.frame(covid = protrain_s$COVID_X1, pca$x)
+0:#transform preprocessed test dataframe into PCA
+0:test_pca <- predict(pca, newdata = protest_s)
+0:View(train_pca)
+0:# limit to only the first 16 PC's (per eigenvalue criterion)
+0:train_pca_final <- train_pca[,1:17]
+0:test_pca_final <- test_pca[,1:17]
+0:#transform preprocessed test dataframe into PCA
+0:test_pca <- predict(pca, newdata = protest_s)
+0:test_pca <- as.data.frame(test_pca)
+0:View(test_pca)
+0:#data <- read_csv("UNCOVER/einstein/diagnosis-of-covid-19-and-its-clinical-spectrum.csv")
+0:data <- read_csv("diagnosis-of-covid-19-and-its-clinical-spectrum.csv") %>%
+0:dplyr::rename(COVID = sars_cov_2_exam_result,
+0:floor = patient_addmited_to_regular_ward_1_yes_0_no,
+0:step = patient_addmited_to_semi_intensive_unit_1_yes_0_no,
+0:icu = patient_addmited_to_intensive_care_unit_1_yes_0_no)
+0:# Select admitted patients only
+0:covid_status <- data %>%
+0:filter(floor == "TRUE" | step == "TRUE" | icu == "TRUE")
+0:#recode admission and COVID status columns
+0:covid_status$admission <- base::ifelse(covid_status$floor == "TRUE", "1",
+0:base::ifelse(covid_status$step == "TRUE", "2",
+0:base::ifelse(covid_status$icu == "TRUE", "2", "0"))) %>% base::as.numeric()
+0:covid_status$COVID <- base::ifelse(covid_status$COVID == "positive", "1","0")
+0:# remove the old floor/step/icu columns, then reorder the columns to put covid target first
+0:covid_status <- covid_status %>%
+0:dplyr::select(-floor,
+0:-step,
+0:-icu,
+0:-patient_id) %>%
+0:dplyr::select(COVID,
+0:everything())
+0:# Subset into covid stratified training and testing sets
+0:set.seed(333)
+0:split_status  <- initial_split(covid_status,
+0:prop = 0.7,
+0:strata = "COVID")
+0:train_s  <- training(split_status)
+0:test_s   <- testing(split_status)
+0:# Double check why Urine Leuko is causing issues
+0:covid_status$urine_leukocytes <- NULL
+0:# specify admission as an outcome column
+0:dna_s <- recipe(COVID ~ ., data = covid_status) %>%
+0:step_nzv(all_predictors())  %>%
+0:step_bagimpute(all_predictors()) %>%
+0:step_integer(matches("urine_color|urine_aspect|urine_hemoglobin")) %>%
+0:step_center(all_numeric(), -all_outcomes()) %>%
+0:step_scale(all_numeric(), -all_outcomes()) %>%
+0:step_dummy(all_nominal(), one_hot = TRUE)
+0:mrna_s <- prep(dna_s, training = train_s)
+0:# pro = processed, resulting in "pro-train", like protein, get it?
+0:protrain_s <- bake(mrna_s, new_data = train_s)
+0:protest_s <- bake(mrna_s, new_data = test_s)
+0:library(ggbiplot) # masks mutate, rename, summarise, arrange
+0:set.seed(333)
+0:pca <- prcomp(protrain_s)
+0:summary(pca)
+0:# Compute eigenvalues
+0:eig <- pca$sdev %>%
+0:as.vector() %>%
+0:.^2
+0:# Sum of all eigenvalues equals number of variables
+0:#sum(eig)
+0:## [1] 42
+0:# Find PCs where the sum of eigenvalues is greater than or equal to 1
+0:which(eig >= 1)
+0:plot_pca <- data.frame(PC = pca$sdev %>% seq_along(),
+0:Proportion = eig/sum(eig),
+0:Cumulative = cumsum(eig)/sum(eig)) %>%
+0:tidyr::gather(metric, Proportion, -PC) %>%
+0:ggplot(aes(PC, Proportion)) +
+0:geom_point() +
+0:facet_wrap(~ metric, ncol = 1, scales = "free")
+0:plot(plot_pca)
+0:train_pca <- data.frame(covid = protrain_s$COVID_X1, pca$x)
+0:#transform preprocessed test dataframe into PCA
+0:test_pca <- predict(pca, newdata = protest_s)
+0:test_pca <- as.data.frame(test_pca)
+0:View(test_pca)
+0:test_pca <- data.frame(covid = protest_s$COVID_X1, test_pca)
+0:View(test_pca)
+0:# limit to only the first 16 PC's (per eigenvalue criterion)
+0:train_pca_final <- train_pca[,1:17]
+0:test_pca_final <- test_pca[,1:17]
+0:View(train_pca_final)
+0:View(test_pca_final)
+0:# create xgb matrix
+0:X_train_pca <- as.matrix(train_pca_final[setdiff(names(train_pca_final), "covid")])
+0:View(X_train_pca)
+0:Y_train_pca <- train_pca_final$covid
+0:X_test_pca <- as.matrix(test_pca_final[setdiff(names(test_pca_final), "covid")])
+0:Y_test_pca <- test_pca_final$admission
+0:xgb_grid_pca = expand.grid(
+0:nrounds = 1000,
+0:eta = c(0.1), #0.05, 0.01), # limited for processing brevity
+0:max_depth = c(2, 3, 4, 5, 6, 7, 8),
+0:gamma = 0,
+0:colsample_bytree=1,
+0:min_child_weight=c(1, 2, 3, 4 ,5),
+0:subsample=1)
+0:control_pca <- trainControl(method ="cv",
+0:number = 10)
+0:set.seed(333)
+0:xgb_caret_pca <- train(x=X_train_pca,
+0:y=Y_train_pca,
+0:method ='xgbTree',
+0:metric ="Accuracy",
+0:#nthreads = 6,
+0:trControl = control_pca,
+0:tuneGrid = xgb_grid_pca
+0:)
+0:xgb_caret_pca <- train(x=X_train_pca,
+0:y=as.factor(Y_train_pca),
+0:method ='xgbTree',
+0:metric ="Accuracy",
+0:#nthreads = 6,
+0:trControl = control_pca,
+0:tuneGrid = xgb_grid_pca
+0:)
+0:# Best tune parameters from hyper parameter grid search
+0:#xgb_caret$results
+0:xgb_caret_pca$bestTune
+0:ggplot(xgb_caret_pca) + theme_minimal()
+0:Y_test_pca <- test_pca_final$covid
+0:# prediction on the test set, with no parameters to add or adjust I'm just using the best tune selected parameters:
+0:test_pred_pca <- predict(xgb_caret_pca, X_test)
+0:# prediction on the test set, with no parameters to add or adjust I'm just using the best tune selected parameters:
+0:test_pred_pca <- predict(xgb_caret_pca, X_test_pca)
+0:caret::confusionMatrix(test_pred_pca, as.factor(Y_test_pca))
+0:# Best tune parameters from hyper parameter grid search
+0:xgb_caret_pca$results
+0:xgb_caret_pca <- train(x=X_train_pca,
+0:y=as.factor(Y_train_pca),
+0:method ='xgbTree',
+0:metric ="Accuracy",
+0:nthreads = 6,
+0:trControl = control_pca,
+0:tuneGrid = xgb_grid_pca
+0:)
+0:xgb_caret_pca <- train(x=X_train_pca,
+0:y=as.factor(Y_train_pca),
+0:method ='xgbTree',
+0:metric ="Accuracy",
+0:nthreads = 6,
+0:trControl = control_pca,
+0:tuneGrid = xgb_grid_pca
+0:)
+0:xgb_caret_pca <- train(x=X_train_pca,
+0:y=as.factor(Y_train_pca),
+0:method ='xgbTree',
+0:metric ="Accuracy",
+0:objective = "binary:logistic",
+0:nthreads = 6,
+0:trControl = control_pca,
+0:tuneGrid = xgb_grid_pca
+0:)
+1604613168376:knitr::opts_chunk$set(echo = TRUE)
+1604613168659:# Theme brewer greens
+1604613168690:# Green: #31a354
+1604613168758:library(tidyverse)
+1604613170371:library(tidymodels)
+1604613171908:library(caret)
+1604613172144:library(xgboost)
+1604613172257:library(h2o) #Stats: cor, sd, var, The following objects are masked from �package:base�:
+1604613172550:#%*%, %in%, &&, ||, apply, as.factor, as.numeric, colnames, colnames<-, ifelse, is.character,
+1604613172578:#is.factor, is.numeric, log, log10, log1p, log2, round, signif, trunc
+1604613172606:library(visdat)
+1604613172647:library(viridis)
+1604613172748:library(reshape2)
+1604613172811:library(RColorBrewer)
+1604613172849:library(ggridges)
+1604613172897:library(DMwR)
+1604613173167:library(MLmetrics) # masks caret::MAE/RMSE, base::recall
+1604613173248:library(e1071)
+1604613173321:#library(VIM) #hides dcast and melt from reshape2, additional from dplyr/lubridate that I'm not using, prepare from recipies
+1604613173349:#library(mice) #hides cbind and rbind used in the split violin plot
+1604613173415:#data <- read_csv("UNCOVER/einstein/diagnosis-of-covid-19-and-its-clinical-spectrum.csv")
+1604613173441:data <- read_csv("diagnosis-of-covid-19-and-its-clinical-spectrum.csv") %>%
+1604613173468:dplyr::rename(COVID = sars_cov_2_exam_result,
+1604613173494:floor = patient_addmited_to_regular_ward_1_yes_0_no,
+1604613173520:step = patient_addmited_to_semi_intensive_unit_1_yes_0_no,
+1604613173546:icu = patient_addmited_to_intensive_care_unit_1_yes_0_no)
+1604613173935:data$urine_ph <- as.numeric(data$urine_ph)
+1604613174114:data.save <- data
+1604613174291:missing.data <- data %>%
+1604613174320:gather(key = "col", value = "val") %>%
+1604613174349:dplyr::mutate(isna = is.na(val)) %>%
+1604613174386:group_by(col) %>%
+1604613174416:mutate(total = n()) %>%
+1604613174447:group_by(col, total, isna) %>%
+1604613174477:dplyr::summarise(num.isna = n()) %>%
+1604613174507:dplyr::mutate(pct = num.isna / total * 100)
+1604613175121:na.plot <- missing.data %>%
+1604613175151:ggplot() +
+1604613175184:geom_bar(aes(x = reorder(col, desc(pct)),
+1604613175211:y = pct,
+1604613175237:fill=isna),
+1604613175262:stat = 'identity', alpha=0.8) +
+1604613175288:theme_minimal() +
+1604613175313:scale_fill_manual(name = "",
+1604613175339:values = c('#31a354', '#c4edd0'),
+1604613175364:labels = c("Value", "NA")) +
+1604613175390:theme(axis.text.x = element_text(angle = 90)) +
+1604613175414:labs(title="Percent Missing by Feature",
+1604613175439:x="",
+1604613175465:y = "% of missing values")
+1604613175761:plot(na.plot)
+1604613176346:na.row <- data %>%
+1604613176400:dplyr::mutate(id = row_number()) %>%
+1604613176430:gather(-id, -patient_id,
+1604613176458:key = "col",
+1604613176484:value = "val") %>%
+1604613176512:dplyr::mutate(isna = is.na(val)) %>%
+1604613176539:ggplot(aes(col, id, fill = isna)) +
+1604613176565:geom_raster(alpha=0.8) +
+1604613176592:theme_minimal() +
+1604613176618:scale_fill_manual(name = "",
+1604613176644:values = c('#31a354', '#c4edd0'),
+1604613176671:labels = c("Value", "NA")) +
+1604613176699:theme(axis.text.x = element_text(angle = 90)) +
+1604613176727:labs(title="Missing by Row",
+1604613176754:x="",
+1604613176780:y = "Row",
+1604613176808:cex.lab=.2)
+1604613177278:plot(na.row)
+1604613180470:data$admission <- base::ifelse(data$floor == "TRUE", "1",
+1604613180501:base::ifelse(data$step == "TRUE", "2",
+1604613180532:base::ifelse(data$icu == "TRUE", "2", "0"))) %>% base::as.numeric()
+1604613180592:# remove the old floor/step/icu columns, filter for covid positive patients only, then reorder the columns to put admission target first
+1604613180626:positive <- data %>%
+1604613180656:select(-floor,
+1604613180686:-step,
+1604613180717:-icu,
+1604613180747:-patient_id) %>%
+1604613180777:filter(COVID == "positive") %>%
+1604613180804:select(admission,
+1604613180833:everything())
+1604613181093:# Selecting non numeric columns into a df, looking for features which may have ordinality
+1604613181121:nominal <- positive %>% dplyr::select_if(~!is.numeric(.x))
+1604613181249:# Create Training and Testing Set: because there are 506 unclassified admissions and 52 positive cases, we'll use the stratify feature of the recipes package to ensure that our target variable is distributed evenly across 70/30 split training and testing subsets
+1604613181304:table(positive$admission) %>% prop.table()
+1604613181476:set.seed(333)
+1604613181504:split  <- initial_split(positive,
+1604613181531:prop = 0.7,
+1604613181558:strata = "admission")
+1604613181672:train  <- training(split)
+1604613181755:test   <- testing(split)
+1604613181858:# The result is a proportionally distributed target variable in our training split
+1604613181890:table(train$admission) %>% prop.table()
+1604613182040:table(test$admission) %>% prop.table()
+1604613182311:# specify admission as an outcome column
+1604613182342:dna <- recipe(admission ~ ., data = positive) %>%
+1604613182374:step_nzv(all_predictors())  %>%
+1604613182406:step_integer(matches("urine_color|urine_aspect|urine_hemoglobin|urine_leukocytes")) %>%
+1604613182439:step_center(all_numeric(), -all_outcomes()) %>%
+1604613182468:step_scale(all_numeric(), -all_outcomes()) %>%
+1604613182496:step_dummy(all_nominal(), one_hot = TRUE)
+1604613182563:mrna <- prep(dna, training = train)
+1604613182768:# pro = processed, resulting in "pro-train", like protein, get it?
+1604613182801:protrain <- bake(mrna, new_data = train)
+1604613182908:protest <- bake(mrna, new_data = test)
+1604613183124:# Using juice and retain = TRUE in the prep phase, there is no need to bake the resulting dataframe.
+1604613183153:# xgb_dna <- recipe(admission ~ ., data = train) %>%
+1604613183182:#   step_nzv(all_nominal())  %>%
+1604613183209:#   step_integer(matches("urine_color|urine_aspect|urine_ph|urine_leukocytes")) %>%
+1604613183237:#   step_center(all_numeric(), -all_outcomes()) %>%
+1604613183266:#   step_scale(all_numeric(), -all_outcomes()) %>%
+1604613183296:#   step_dummy(all_nominal(), one_hot = TRUE) %>%
+1604613183325:#   prep(training = train, retain = TRUE) %>%
+1604613183355:#   juice()
+1604613183405:#X <- as.matrix(xgb_dna[setdiff(names(xgb_dna), "admission")])
+1604613183434:#Y <- xgb_dna$admission
+1604613183489:X_train <- as.matrix(protrain[setdiff(names(protrain), "admission")])
+1604613183526:Y_train <- protrain$admission
+1604613183558:X_test <- as.matrix(protest[setdiff(names(protest), "admission")])
+1604613183591:Y_test <- protest$admission
+1604613183641:# Creating independent target dataframes as factor levels
+1604613183667:Y_train_char <- as.data.frame(Y_train) %>%
+1604613183694:dplyr::mutate(Y_train = factor(dplyr::case_when(
+1604613183724:Y_train == 0 ~ "OP",
+1604613183752:Y_train == 1 ~ "Floor",
+1604613183779:Y_train == 2 ~ "ICU"),
+1604613183806:levels = c("OP", "Floor", "ICU")))
+1604613183879:Y_test_char <- as.data.frame(Y_test) %>%
+1604613183907:dplyr::mutate(Y_test = factor(dplyr::case_when(
+1604613183934:Y_test == 0 ~ "OP",
+1604613183961:Y_test == 1 ~ "Floor",
+1604613183987:Y_test == 2 ~ "ICU"),
+1604613184013:levels = c("OP", "Floor", "ICU")))
+1604613184065:# Number of classes in our admission set, this is used during performance evaluation
+1604613184092:num_class = length(unique(positive$admission))
+1604613184247:xgb_grid = expand.grid(
+1604613184278:nrounds = 1000,
+1604613184306:eta = c(0.1), #0.05, 0.01), # limited for processing brevity
+1604613184335:max_depth = c(2, 3, 4, 5, 6, 7, 8),
+1604613184363:gamma = 0,
+1604613184391:colsample_bytree=1,
+1604613184420:min_child_weight=c(1, 2, 3, 4 ,5),
+1604613184448:subsample=1)
+1604613184508:control <- trainControl(method ="cv",
+1604613184537:number = 10,
+1604613184566:classProbs = TRUE,
+1604613184603:summaryFunction = multiClassSummary,
+1604613184635:sampling = "smote")
+1604613184725:set.seed(333)
+1604613184758:xgb_caret <- train(x=X_train,
+1604613184788:y=Y_train_char$Y_train,
+1604613184816:method ='xgbTree',
+1604613184844:metric ="logLoss",
+1604613184873:#nthreads = 6,
+1604613184901:trControl = control,
+1604613184930:tuneGrid = xgb_grid
+1604613184959:)
+1604613325082:# Best tune parameters from hyper parameter grid search
+1604613325113:#xgb_caret$results
+1604613325139:xgb_caret$bestTune
+1604613325342:ggplot(xgb_caret) + theme_minimal()
+1604613325523:# https://topepo.github.io/caret/measuring-performance.html#measures-for-class-probabilities
+1604613325547:#multiClassSummary(X_train, lev = levels(Y_test_char$Y_test))
+1604613325571:#mnLogLoss(Y_test, lev = levels(Y_test_char$Y_test))
+1604613327489:# prediction on the test set, with no parameters to add or adjust I'm just using the best tune selected parameters:
+1604613327538:test_pred <- predict(xgb_caret, X_test)
+1604613327581:caret::confusionMatrix(test_pred, as.factor(Y_test_char$Y_test))
+1604613328878:importance_xgb <- varImp(xgb_caret, scale = FALSE)
+1604613328994:ggplot(importance_xgb) +
+1604613329021:theme_minimal() +
+1604613329050:labs(title="Top Features")
+1604613329426:#Split Violin plotting credit to:
+1604613329476:#https://stackoverflow.com/questions/35717353/split-violin-plot-with-ggplot2
+1604613329529:GeomSplitViolin <- ggproto("GeomSplitViolin", GeomViolin,
+1604613329559:draw_group = function(self, data, ..., draw_quantiles = NULL) {
+1604613329590:data <- transform(data, xminv = x - violinwidth * (x - xmin), xmaxv = x + violinwidth * (xmax - x))
+1604613329617:grp <- data[1, "group"]
+1604613329651:newdata <- plyr::arrange(transform(data, x = if (grp %% 2 == 1) xminv else xmaxv), if (grp %% 2 == 1) y else -y)
+1604613329680:newdata <- rbind(newdata[1, ], newdata, newdata[nrow(newdata), ], newdata[1, ])
+1604613329713:newdata[c(1, nrow(newdata) - 1, nrow(newdata)), "x"] <- round(newdata[1, "x"])
+1604613329763:if (length(draw_quantiles) > 0 & !scales::zero_range(range(data$y))) {
+1604613329791:stopifnot(all(draw_quantiles >= 0), all(draw_quantiles <=
+1604613329818:1))
+1604613329844:quantiles <- ggplot2:::create_quantile_segment_frame(data, draw_quantiles)
+1604613329874:aesthetics <- data[rep(1, nrow(quantiles)), setdiff(names(data), c("x", "y")), drop = FALSE]
+1604613329903:aesthetics$alpha <- rep(1, nrow(quantiles))
+1604613329933:both <- cbind(quantiles, aesthetics)
+1604613329961:quantile_grob <- GeomPath$draw_panel(both, ...)
+1604613329985:ggplot2:::ggname("geom_split_violin", grid::grobTree(GeomPolygon$draw_panel(newdata, ...), quantile_grob))
+1604613330011:}
+1604613330036:else {
+1604613330061:ggplot2:::ggname("geom_split_violin", GeomPolygon$draw_panel(newdata, ...))
+1604613330089:}
+1604613330114:})
+1604613330161:geom_split_violin <- function(mapping = NULL, data = NULL, stat = "ydensity", position = "identity", ...,
+1604613330186:draw_quantiles = NULL, trim = TRUE, scale = "area", na.rm = FALSE,
+1604613330212:show.legend = NA, inherit.aes = TRUE) {
+1604613330239:layer(data = data, mapping = mapping, stat = stat, geom = GeomSplitViolin,
+1604613330265:position = position, show.legend = show.legend, inherit.aes = inherit.aes,
+1604613330290:params = list(trim = trim, scale = scale, draw_quantiles = draw_quantiles, na.rm = na.rm, ...))
+1604613330313:}
+1604613330470:xgb_top <- tibble::rownames_to_column(importance_xgb$importance, "Feature") %>%
+1604613330499:filter(Overall > 0.0) %>%
+1604613330528:dplyr::arrange(desc(Overall)) %>%
+1604613330559:slice_head(n=10)
+1604613330681:xgb_top_plot <- positive %>%
+1604613330709:subset(select = c("admission", xgb_top$Feature)) %>%
+1604613330737:dplyr::mutate(admission = factor(dplyr::case_when(
+1604613330764:admission == 0 ~ "OP",
+1604613330791:admission == 1 ~ "Floor",
+1604613330819:admission == 2 ~ "ICU"),
+1604613330846:levels = c("OP", "Floor", "ICU"))) %>%
+1604613330873:gather(-admission, key = "var", value = "value") %>%
+1604613330900:ggplot(aes(x=as.factor(admission), y=value, fill = as.factor(admission) )) +
+1604613330927:geom_split_violin() +
+1604613330962:geom_boxplot(width=0.3) +
+1604613330991:scale_fill_manual(labels = c("OP", "Floor", "ICU"), values=c(brewer.pal(3, "Greens"))) +
+1604613331021:facet_wrap(~var, scales = "free") +
+1604613331050:theme_minimal() +
+1604613331084:labs(title="Top 10 Features",
+1604613331118:subtitle = "COVID Positive Patients by Admission Acuity",
+1604613331148:fill="Acuity") +
+1604613331176:xlab("") +
+1604613331202:ylab("")
+1604613331448:plot(xgb_top_plot)
+1604613332675:xgb_top_dense <-positive %>%
+1604613332699:subset(select = c("admission", xgb_top$Feature)) %>%
+1604613332727:dplyr::mutate(admission = factor(dplyr::case_when(
+1604613332754:admission == 0 ~ "OP",
+1604613332781:admission == 1 ~ "Floor",
+1604613332806:admission == 2 ~ "ICU"),
+1604613332831:levels = c("OP", "Floor", "ICU"))) %>%
+1604613332857:gather(-admission, key = "var", value = "value") %>%
+1604613332885:ggplot( aes(x=value, y = ..density.., fill=admission)) +
+1604613332910:geom_density(alpha=0.9) +
+1604613332936:scale_fill_manual(labels = c("OP", "Floor", "ICU"), values=c(brewer.pal(3, "Greens"))) +
+1604613332964:facet_wrap(~var, scales = "free") +
+1604613332990:theme_minimal() +
+1604613333015:labs(title="Top 10 Features",
+1604613333042:subtitle = "COVID Positive Patients by Admission Acuity",
+1604613333069:fill="Acuity") +
+1604613333095:xlab("") +
+1604613333121:ylab("")
+1604613333369:plot(xgb_top_dense)
+1604613334205:xgb_top_jitter <-positive %>%
+1604613334266:subset(select = c("admission", xgb_top$Feature)) %>%
+1604613334294:dplyr::mutate(admission = factor(dplyr::case_when(
+1604613334321:admission == 0 ~ "OP",
+1604613334346:admission == 1 ~ "Floor",
+1604613334372:admission == 2 ~ "ICU"),
+1604613334397:levels = c("OP", "Floor", "ICU"))) %>%
+1604613334423:gather(-admission, key = "var", value = "value") %>%
+1604613334453:ggplot( aes(x=value, y=var, fill=admission)) +
+1604613334480:geom_boxplot() +
+1604613334505:scale_fill_manual(labels = c("OP", "Floor", "ICU"), values=c(brewer.pal(3, "Greens"))) +
+1604613334530:geom_jitter(color="black", size=0.4, alpha=0.9) +
+1604613334555:coord_flip() +
+1604613334581:theme_minimal() +
+1604613334606:theme(axis.text.x = element_text(angle = 45)) +
+1604613334630:labs(title="Top 10 Features",
+1604613334657:subtitle = "COVID Positive Patients by Admission Acuity",
+1604613334682:fill="Acuity") +
+1604613334705:xlab("") +
+1604613334729:ylab("")
+1604613334949:plot(xgb_top_jitter)
+1604613335479:xgb_top_ridge <-positive %>%
+1604613335532:subset(select = c("admission", xgb_top$Feature)) %>%
+1604613335562:dplyr::mutate(admission = factor(dplyr::case_when(
+1604613335590:admission == 0 ~ "OP",
+1604613335617:admission == 1 ~ "Floor",
+1604613335645:admission == 2 ~ "ICU"),
+1604613335672:levels = c("OP", "Floor", "ICU"))) %>%
+1604613335701:gather(-admission, key = "var", value = "value") %>%
+1604613335726:ggplot( aes(x=value, y=var, fill=admission)) +
+1604613335751:geom_density_ridges() +
+1604613335775:theme_ridges() +
+1604613335801:scale_fill_manual(labels = c("OP", "Floor", "ICU"), values=c(brewer.pal(3, "Greens"))) +
+1604613335828:labs(title="Top 10 Features",
+1604613335857:subtitle = "COVID Positive Patients by Admission Acuity",
+1604613335884:fill="Acuity") +
+1604613335910:xlab("") +
+1604613335936:ylab("")
+1604613336178:plot(xgb_top_ridge)
+1604613336724:# Select admitted patients only
+1604613336776:covid_status <- data %>%
+1604613336808:filter(floor == "TRUE" | step == "TRUE" | icu == "TRUE")
+1604613336926:#recode admission and COVID status columns
+1604613336954:covid_status$admission <- base::ifelse(covid_status$floor == "TRUE", "1",
+1604613336979:base::ifelse(covid_status$step == "TRUE", "2",
+1604613337007:base::ifelse(covid_status$icu == "TRUE", "2", "0"))) %>% base::as.numeric()
+1604613337099:covid_status$COVID <- base::ifelse(covid_status$COVID == "positive", "1","0")
+1604613337209:# remove the old floor/step/icu columns, then reorder the columns to put covid target first
+1604613337236:covid_status <- covid_status %>%
+1604613337264:dplyr::select(-floor,
+1604613337291:-step,
+1604613337316:-icu,
+1604613337341:-patient_id) %>%
+1604613337367:dplyr::select(COVID,
+1604613337393:everything())
+1604613337529:# Subset into covid stratified training and testing sets
+1604613337560:set.seed(333)
+1604613337588:split_status  <- initial_split(covid_status,
+1604613337616:prop = 0.7,
+1604613337641:strata = "COVID")
+1604613337759:train_s  <- training(split_status)
+1604613337842:test_s   <- testing(split_status)
+1604613338052:# Double check why Urine Leuko is causing issues
+1604613338081:covid_status$urine_leukocytes <- NULL
+1604613338186:# specify admission as an outcome column
+1604613338213:dna_s <- recipe(COVID ~ ., data = covid_status) %>%
+1604613338238:step_nzv(all_predictors())  %>%
+1604613338264:step_bagimpute(all_predictors()) %>%
+1604613338290:step_integer(matches("urine_color|urine_aspect|urine_hemoglobin")) %>%
+1604613338315:step_center(all_numeric(), -all_outcomes()) %>%
+1604613338340:step_scale(all_numeric(), -all_outcomes()) %>%
+1604613338365:step_dummy(all_nominal(), one_hot = TRUE)
+1604613338574:mrna_s <- prep(dna_s, training = train_s)
+1604613352733:# pro = processed, resulting in "pro-train", like protein, get it?
+1604613352757:protrain_s <- bake(mrna_s, new_data = train_s)
+1604613353470:protest_s <- bake(mrna_s, new_data = test_s)
+1604613354307:# library(ggbiplot) # masks mutate, rename, summarise, arrange
+1604613354354:set.seed(333)
+1604613354380:pca <- prcomp(protrain_s)
+1604613354493:#summary(pca)
+1604613354645:# need to rework labels here
+1604613354688:# ggbiplot(pca,
+1604613354714:#          ellipse = TRUE,
+1604613354739:#          #choices=c(2,3),
+1604613354764:#          labels=protrain_s$admission,
+1604613354789:#          groups=protrain_s$COVID_X1)
+1604613354949:# Compute eigenvalues
+1604613354979:eig <- pca$sdev %>%
+1604613355005:as.vector() %>%
+1604613355030:.^2
+1604613355077:# Sum of all eigenvalues equals number of variables
+1604613355105:#sum(eig)
+1604613355131:## [1] 42
+1604613355174:# Find PCs where the sum of eigenvalues is greater than or equal to 1
+1604613355201:which(eig >= 1)
+1604613355540:plot_pca <- data.frame(PC = pca$sdev %>% seq_along(),
+1604613355570:Proportion = eig/sum(eig),
+1604613355598:Cumulative = cumsum(eig)/sum(eig)) %>%
+1604613355625:tidyr::gather(metric, Proportion, -PC) %>%
+1604613355652:ggplot(aes(PC, Proportion)) +
+1604613355680:geom_point() +
+1604613355704:facet_wrap(~ metric, ncol = 1, scales = "free")
+1604613355764:plot(plot_pca)
+1604613356736:# protrain_s <- bake(mrna_s, new_data = train_s)
+1604613356783:# protest_s <- bake(mrna_s, new_data = test_s)
+1604613356831:train_pca <- data.frame(covid = protrain_s$COVID_X1, pca$x)
+1604613356919:#transform preprocessed test dataframe into PCA
+1604613356947:test_pca <- predict(pca, newdata = protest_s)
+1604613356977:test_pca <- as.data.frame(test_pca)
+1604613357038:test_pca <- data.frame(covid = protest_s$COVID_X1, test_pca)
+1604613357123:# limit to only the first 16 PC's (per eigenvalue criterion)
+1604613357149:train_pca_final <- train_pca[,1:17]
+1604613357185:test_pca_final <- test_pca[,1:17]
+1604613357239:# create xgb matrix
+1604613357272:X_train_pca <- as.matrix(train_pca_final[setdiff(names(train_pca_final), "covid")])
+1604613357305:Y_train_pca <- train_pca_final$covid
+1604613357337:X_test_pca <- as.matrix(test_pca_final[setdiff(names(test_pca_final), "covid")])
+1604613357370:Y_test_pca <- test_pca_final$covid
+1604613357440:xgb_grid_pca = expand.grid(
+1604613357466:nrounds = 1000,
+1604613357492:eta = c(0.1), #0.05, 0.01), # limited for processing brevity
+1604613357517:max_depth = c(2, 3, 4, 5, 6, 7, 8),
+1604613357541:gamma = 0,
+1604613357566:colsample_bytree=1,
+1604613357591:min_child_weight=c(1, 2, 3, 4 ,5),
+1604613357616:subsample=1)
+1604613357669:control_pca <- trainControl(method ="cv",
+1604613357695:number = 5)
+1604613357776:set.seed(333)
+1604613357803:xgb_caret_pca <- train(x=X_train_pca,
+1604613357830:y=as.factor(Y_train_pca),
+1604613357856:method ='xgbTree',
+1604613357882:metric ="Accuracy",
+1604613357906:objective = "binary:logistic",
+1604613357932:#nthreads = 6,
+1604613357957:trControl = control_pca,
+1604613357983:tuneGrid = xgb_grid_pca
+1604613358008:)
+1604613402264:# Best tune parameters from hyper parameter grid search
+1604613402290:#xgb_caret_pca$results
+1604613402316:xgb_caret_pca$bestTune
+1604613402594:ggplot(xgb_caret_pca) + theme_minimal()
+1604613404599:# prediction on the test set, with no parameters to add or adjust I'm just using the best tune selected parameters:
+1604613404651:test_pred_pca <- predict(xgb_caret_pca, X_test_pca)
+1604613404694:caret::confusionMatrix(test_pred_pca, as.factor(Y_test_pca))

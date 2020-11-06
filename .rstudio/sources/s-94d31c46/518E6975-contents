@@ -1,0 +1,780 @@
+---
+title: "README.md"
+output: 
+  html_document:
+    toc: true
+    toc_depth: 3
+    keep_md: TRUE
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# COVID Severity
+
+**Overview:** In this project my goal was to identify metabolic differences positive COVID-19 patients which might indicate increased acuity. It represents a step forward from my previous projects in code technique and extensibility, better data hygiene and elimination of data leakage, greater command of the Caret modeling process, and (still in process) more robust outcome evaluation.
+<br>
+
+**Highlights:**
+
+*	Missing Data Visualizations.
+*	Introduction of the recipes package.
+
+*	XGBoost:
+    +	Hyperparameter tuning using grid search.
+    +	Caret multi-class summary.
+    +	10-fold cross validation.
+    +	SMOTE subsampling for improved imbalanced classification.
+    
+* PCA Evaluation
+
+<br>
+
+**Outcome:** The resulting model was able to achieve acceptable accuracy owing to high sensitivity of the dominate class (Outpatient treatment patients). However, minority classification performance was poor, and the model failed to achieve statistical significance (Floor and ICU patients). I believe this to be a result of poor representation within subsamples, limited number of features, and limited nature of the data set. 
+
+<br>
+
+## About the Data
+
+This dataset contains anonymized data from patients seen at the Hospital Israelita Albert Einstein, at São Paulo, Brazil, and who had samples collected to perform the SARS-CoV-2 RT-PCR and additional laboratory tests during a visit to the hospital. All data were anonymized following the best international practices and recommendations. All clinical data were standardized to have a mean of zero and a unit standard deviation. We aimed at including laboratory tests more commonly order during a visit to the emergency room
+
+
+
+<br>
+
+
+
+```{r, echo=FALSE, include=FALSE}
+
+# Theme brewer greens 
+# Green: #31a354
+
+library(tidyverse)
+library(tidymodels)
+library(caret)
+library(xgboost)
+library(h2o) #Stats: cor, sd, var, The following objects are masked from �package:base�:
+    #%*%, %in%, &&, ||, apply, as.factor, as.numeric, colnames, colnames<-, ifelse, is.character,
+    #is.factor, is.numeric, log, log10, log1p, log2, round, signif, trunc
+library(visdat)
+library(viridis)
+library(reshape2)
+library(RColorBrewer)
+library(ggridges)
+library(DMwR)
+library(MLmetrics) # masks caret::MAE/RMSE, base::recall
+library(e1071)
+#library(VIM) #hides dcast and melt from reshape2, additional from dplyr/lubridate that I'm not using, prepare from recipies
+#library(mice) #hides cbind and rbind used in the split violin plot
+
+
+#data <- read_csv("UNCOVER/einstein/diagnosis-of-covid-19-and-its-clinical-spectrum.csv")
+data <- read_csv("diagnosis-of-covid-19-and-its-clinical-spectrum.csv") %>% 
+              dplyr::rename(COVID = sars_cov_2_exam_result,
+                       floor = patient_addmited_to_regular_ward_1_yes_0_no,
+                       step = patient_addmited_to_semi_intensive_unit_1_yes_0_no,
+                       icu = patient_addmited_to_intensive_care_unit_1_yes_0_no)
+
+data$urine_ph <- as.numeric(data$urine_ph)
+
+data.save <- data
+
+```
+
+<br>
+
+## Something is Missing {.tabset .tabset-fade}
+
+Upon loading the data set you're immediately struck by the amount of missing values. Plotting the count of NA by feature we can better see the true extent. <br>
+
+
+### Percent Missing by Feature
+
+```{r, echo=FALSE, fig.width=12, fig.height=8}
+
+
+missing.data <- data %>%
+                gather(key = "col", value = "val") %>%
+                dplyr::mutate(isna = is.na(val)) %>%
+                group_by(col) %>%
+                mutate(total = n()) %>%
+                group_by(col, total, isna) %>%
+                dplyr::summarise(num.isna = n()) %>%
+                dplyr::mutate(pct = num.isna / total * 100)
+
+na.plot <- missing.data %>%
+                   ggplot() +
+                   geom_bar(aes(x = reorder(col, desc(pct)), 
+                                y = pct,
+                                fill=isna), 
+                   stat = 'identity', alpha=0.8) +
+                   theme_minimal() +
+                   scale_fill_manual(name = "", 
+                                     values = c('#31a354', '#c4edd0'), 
+                                     labels = c("Value", "NA")) +
+                   theme(axis.text.x = element_text(angle = 90)) +
+                   labs(title="Percent Missing by Feature", 
+                       x="",
+                       y = "% of missing values")
+
+plot(na.plot)
+
+```
+
+### Missing by Row
+
+```{r, warning=FALSE, echo=FALSE, fig.width=12, fig.height=8}
+
+na.row <- data %>%
+            dplyr::mutate(id = row_number()) %>%
+            gather(-id, -patient_id, 
+                   key = "col", 
+                   value = "val") %>%
+            dplyr::mutate(isna = is.na(val)) %>%
+            ggplot(aes(col, id, fill = isna)) +
+            geom_raster(alpha=0.8) +
+            theme_minimal() +
+            scale_fill_manual(name = "", 
+                                     values = c('#31a354', '#c4edd0'), 
+                                     labels = c("Value", "NA")) +
+            theme(axis.text.x = element_text(angle = 90)) +
+            labs(title="Missing by Row", 
+                       x="",
+                       y = "Row",
+                       cex.lab=.2)
+
+plot(na.row)
+
+
+```
+<br>
+
+### Admission Recoding
+
+Many of the present values are the TRUE/FALSE patient admission status, with no overlap across acuity levels these will be recoded into a single admission column where floor (general ward) = 1, step (semi intensive care) and icu = 2, and no status is assumed to be outpatient (OP) = 0. 
+
+```{r}
+
+data$admission <- base::ifelse(data$floor == "TRUE", "1", 
+                               base::ifelse(data$step == "TRUE", "2",
+                                            base::ifelse(data$icu == "TRUE", "2", "0"))) %>% base::as.numeric()
+
+# remove the old floor/step/icu columns, filter for covid positive patients only, then reorder the columns to put admission target first
+positive <- data %>% 
+              select(-floor, 
+                     -step,
+                     -icu,
+                     -patient_id) %>%
+              filter(COVID == "positive") %>%
+              select(admission, 
+                     everything())
+
+
+
+```
+
+
+<br>
+
+## Recipies {.tabset .tabset-fade}
+
+Then we evaluate non-numeric columns for ordinal features. While many are simply boolean values (ie detected / not_detected) urine micro results represent an ordinal condition (such as aspect: clear, lightly cloudy, cloudy) must be recoded. <br>
+
+This is where we'll introduce the recipes package to create integer features, drop our zero and near zero variance variables and stratify the training set based off the target "admission" variable. Given the poor distribution of the target variable, we'll use a subsampling technique during our training process. <br>
+
+<br>
+
+### Split
+
+```{r}
+
+# Selecting non numeric columns into a df, looking for features which may have ordinality
+nominal <- positive %>% dplyr::select_if(~!is.numeric(.x))
+
+# Create Training and Testing Set: because there are 506 unclassified admissions and 52 positive cases, we'll use the stratify feature of the recipes package to ensure that our target variable is distributed evenly across 70/30 split training and testing subsets
+
+table(positive$admission) %>% prop.table()
+
+set.seed(333)
+split  <- initial_split(positive, 
+                        prop = 0.7, 
+                        strata = "admission")
+
+train  <- training(split)
+test   <- testing(split)
+
+# The result is a proportionally distributed target variable in our training split
+table(train$admission) %>% prop.table()
+table(test$admission) %>% prop.table()
+
+
+
+
+```
+<br>
+
+### Designing "DNA" with Recipies
+
+Building our recipes DNA to perform the following steps: <br>
+- Remove zero and near zero variance variables <br>
+- Create ordinal integers for specified nominal columns <br>
+- Center and scale all numeric variables <br>
+- One-hot encode remaining nominal features <br>
+- Once the recipe is created, we prep the sample to estimate the outcome, then bake our training and test samples. <br>
+- The preped mRNA then processes ("pro") the training set to create the protrain df... protrain... like protein, get it? Cause the mRNA...<br>
+
+Next steps will be to build this directly into my caret training process, but I ran into issues when evaluating the prediction. <br>
+
+```{r, warning=FALSE}
+
+# specify admission as an outcome column
+dna <- recipe(admission ~ ., data = positive) %>%
+   step_nzv(all_predictors())  %>%
+   step_integer(matches("urine_color|urine_aspect|urine_hemoglobin|urine_leukocytes")) %>%
+   step_center(all_numeric(), -all_outcomes()) %>%
+   step_scale(all_numeric(), -all_outcomes()) %>%
+   step_dummy(all_nominal(), one_hot = TRUE)
+ 
+mrna <- prep(dna, training = train)
+
+# pro = processed, resulting in "pro-train", like protein, get it?
+protrain <- bake(mrna, new_data = train)
+protest <- bake(mrna, new_data = test)
+
+```
+
+<br>
+
+## XGBoost with Caret {.tabset .tabset-fade}
+
+  Using XGBoost for its ability to handle and incorporate missing values. Given that we're primarily working with patient medical lab data, it would be inappropriate to impute missing values. This precludes us from being able to evaluate for highly correlated features, with non-boosted tree models (random forest) this could cause correlated features which are otherwise strong predictors to be under represented in the resulting ensemble. With XGBoost if two predictors are perfectly correlated the descent gradient cost function will essentially "pick one" and carry it forward for the remaining ensembles. We wont know if this happens without calculating correlations, but the main impact would be in our data storytelling. <br> 
+
+```{r, echo=FALSE, warning=FALSE}
+
+# Using juice and retain = TRUE in the prep phase, there is no need to bake the resulting dataframe.
+# xgb_dna <- recipe(admission ~ ., data = train) %>%
+#   step_nzv(all_nominal())  %>%
+#   step_integer(matches("urine_color|urine_aspect|urine_ph|urine_leukocytes")) %>%
+#   step_center(all_numeric(), -all_outcomes()) %>%
+#   step_scale(all_numeric(), -all_outcomes()) %>%
+#   step_dummy(all_nominal(), one_hot = TRUE) %>%
+#   prep(training = train, retain = TRUE) %>%
+#   juice()
+
+#X <- as.matrix(xgb_dna[setdiff(names(xgb_dna), "admission")])
+#Y <- xgb_dna$admission
+
+X_train <- as.matrix(protrain[setdiff(names(protrain), "admission")])
+Y_train <- protrain$admission
+X_test <- as.matrix(protest[setdiff(names(protest), "admission")])
+Y_test <- protest$admission
+
+# Creating independent target dataframes as factor levels
+Y_train_char <- as.data.frame(Y_train) %>%
+                        dplyr::mutate(Y_train = factor(dplyr::case_when(
+                               Y_train == 0 ~ "OP",
+                               Y_train == 1 ~ "Floor", 
+                               Y_train == 2 ~ "ICU"), 
+                        levels = c("OP", "Floor", "ICU")))
+
+
+Y_test_char <- as.data.frame(Y_test) %>%
+                        dplyr::mutate(Y_test = factor(dplyr::case_when(
+                               Y_test == 0 ~ "OP",
+                               Y_test == 1 ~ "Floor", 
+                               Y_test == 2 ~ "ICU"), 
+                        levels = c("OP", "Floor", "ICU")))
+
+# Number of classes in our admission set, this is used during performance evaluation
+num_class = length(unique(positive$admission))
+
+```
+
+<br>
+
+### Tuning + SMOTE
+
+Setting up our Tuning grid to find best performing hyperparameters. Using the Caret train function to perform 10-fold cross validation with multiclass summary. To better accommodate our imbalanced classification, we're using the hybrid subsampling method SMOTE (synthetic Minority Over Sampling Technique) performed within each cross validation subset. 
+
+```{r, warning=FALSE}
+
+
+xgb_grid = expand.grid(
+                  nrounds = 1000,
+                  eta = c(0.1), #0.05, 0.01), # limited for processing brevity
+                  max_depth = c(2, 3, 4, 5, 6, 7, 8),
+                  gamma = 0,
+                  colsample_bytree=1,
+                  min_child_weight=c(1, 2, 3, 4 ,5),
+                  subsample=1)
+
+control <- trainControl(method ="cv", 
+                        number = 10,
+                        classProbs = TRUE, 
+                        summaryFunction = multiClassSummary,
+                        sampling = "smote")
+
+
+set.seed(333)
+xgb_caret <- train(x=X_train, 
+                   y=Y_train_char$Y_train, 
+                   method ='xgbTree',
+                   metric ="logLoss",
+                   #nthreads = 6,
+                   trControl = control,
+                   tuneGrid = xgb_grid
+                   ) 
+
+# Best tune parameters from hyper parameter grid search
+#xgb_caret$results
+xgb_caret$bestTune
+
+
+```
+
+<br>
+
+### Design
+
+```{r, echo=FALSE}
+
+ggplot(xgb_caret) + theme_minimal()
+
+
+# https://topepo.github.io/caret/measuring-performance.html#measures-for-class-probabilities
+#multiClassSummary(X_train, lev = levels(Y_test_char$Y_test))
+#mnLogLoss(Y_test, lev = levels(Y_test_char$Y_test))
+
+
+```
+
+<br>
+
+### Performance
+
+```{r, echo=FALSE}
+
+# prediction on the test set, with no parameters to add or adjust I'm just using the best tune selected parameters:
+test_pred <- predict(xgb_caret, X_test)
+caret::confusionMatrix(test_pred, as.factor(Y_test_char$Y_test))
+
+
+
+```
+
+<br>
+
+### Feature Importance
+
+
+```{r, echo=FALSE, fig.width=12, fig.height=12}
+
+importance_xgb <- varImp(xgb_caret, scale = FALSE)
+ggplot(importance_xgb) +
+       theme_minimal() +
+       labs(title="Top Features")
+
+```
+
+<br>
+
+```{r, include=FALSE}
+
+#Split Violin plotting credit to:
+#https://stackoverflow.com/questions/35717353/split-violin-plot-with-ggplot2
+
+GeomSplitViolin <- ggproto("GeomSplitViolin", GeomViolin, 
+                           draw_group = function(self, data, ..., draw_quantiles = NULL) {
+                             data <- transform(data, xminv = x - violinwidth * (x - xmin), xmaxv = x + violinwidth * (xmax - x))
+                             grp <- data[1, "group"]
+                             newdata <- plyr::arrange(transform(data, x = if (grp %% 2 == 1) xminv else xmaxv), if (grp %% 2 == 1) y else -y)
+                             newdata <- rbind(newdata[1, ], newdata, newdata[nrow(newdata), ], newdata[1, ])
+                             newdata[c(1, nrow(newdata) - 1, nrow(newdata)), "x"] <- round(newdata[1, "x"])
+                             
+                             if (length(draw_quantiles) > 0 & !scales::zero_range(range(data$y))) {
+                               stopifnot(all(draw_quantiles >= 0), all(draw_quantiles <=
+                                                                         1))
+                               quantiles <- ggplot2:::create_quantile_segment_frame(data, draw_quantiles)
+                               aesthetics <- data[rep(1, nrow(quantiles)), setdiff(names(data), c("x", "y")), drop = FALSE]
+                               aesthetics$alpha <- rep(1, nrow(quantiles))
+                               both <- cbind(quantiles, aesthetics)
+                               quantile_grob <- GeomPath$draw_panel(both, ...)
+                               ggplot2:::ggname("geom_split_violin", grid::grobTree(GeomPolygon$draw_panel(newdata, ...), quantile_grob))
+                             }
+                             else {
+                               ggplot2:::ggname("geom_split_violin", GeomPolygon$draw_panel(newdata, ...))
+                             }
+                           })
+
+geom_split_violin <- function(mapping = NULL, data = NULL, stat = "ydensity", position = "identity", ..., 
+                              draw_quantiles = NULL, trim = TRUE, scale = "area", na.rm = FALSE, 
+                              show.legend = NA, inherit.aes = TRUE) {
+  layer(data = data, mapping = mapping, stat = stat, geom = GeomSplitViolin, 
+        position = position, show.legend = show.legend, inherit.aes = inherit.aes, 
+        params = list(trim = trim, scale = scale, draw_quantiles = draw_quantiles, na.rm = na.rm, ...))
+}
+
+
+
+```
+
+<br>
+
+## Feature Exploration {.tabset .tabset-fade}
+
+<br>
+
+### Violin 
+
+```{r, echo=FALSE, warning=FALSE, fig.width=10, fig.height=10}
+
+xgb_top <- tibble::rownames_to_column(importance_xgb$importance, "Feature") %>% 
+                                          filter(Overall > 0.0) %>%
+                                          dplyr::arrange(desc(Overall)) %>% 
+                                          slice_head(n=10)
+
+
+xgb_top_plot <- positive %>%
+                subset(select = c("admission", xgb_top$Feature)) %>%
+                dplyr::mutate(admission = factor(dplyr::case_when(
+                               admission == 0 ~ "OP",
+                               admission == 1 ~ "Floor", 
+                               admission == 2 ~ "ICU"), 
+                       levels = c("OP", "Floor", "ICU"))) %>%
+                gather(-admission, key = "var", value = "value") %>% 
+                      ggplot(aes(x=as.factor(admission), y=value, fill = as.factor(admission) )) +
+                      geom_split_violin() +
+                      geom_boxplot(width=0.3) +
+                      scale_fill_manual(labels = c("OP", "Floor", "ICU"), values=c(brewer.pal(3, "Greens"))) +
+                      facet_wrap(~var, scales = "free") +
+                theme_minimal() +
+                labs(title="Top 10 Features",
+                     subtitle = "COVID Positive Patients by Admission Acuity",
+                     fill="Acuity") +
+                     xlab("") +  
+                     ylab("")
+
+
+plot(xgb_top_plot)
+                      
+                      
+```
+
+<br>
+
+### Density 
+
+```{r, echo=FALSE, warning=FALSE, fig.width=10, fig.height=10}
+
+xgb_top_dense <-positive %>%
+                subset(select = c("admission", xgb_top$Feature)) %>%
+                dplyr::mutate(admission = factor(dplyr::case_when(
+                               admission == 0 ~ "OP",
+                               admission == 1 ~ "Floor", 
+                               admission == 2 ~ "ICU"), 
+                       levels = c("OP", "Floor", "ICU"))) %>%
+                gather(-admission, key = "var", value = "value") %>% 
+                ggplot( aes(x=value, y = ..density.., fill=admission)) +
+                geom_density(alpha=0.9) +
+                scale_fill_manual(labels = c("OP", "Floor", "ICU"), values=c(brewer.pal(3, "Greens"))) +
+                facet_wrap(~var, scales = "free") +
+                theme_minimal() +
+                labs(title="Top 10 Features",
+                     subtitle = "COVID Positive Patients by Admission Acuity",
+                     fill="Acuity") +
+                     xlab("") +  
+                     ylab("")
+
+
+plot(xgb_top_dense)
+
+```
+<br>
+
+### Box and Jitter 
+
+```{r, echo=FALSE, warning=FALSE, fig.width=12, fig.height=8}
+
+xgb_top_jitter <-positive %>%
+                subset(select = c("admission", xgb_top$Feature)) %>%
+                dplyr::mutate(admission = factor(dplyr::case_when(
+                               admission == 0 ~ "OP",
+                               admission == 1 ~ "Floor", 
+                               admission == 2 ~ "ICU"), 
+                       levels = c("OP", "Floor", "ICU"))) %>%
+                gather(-admission, key = "var", value = "value") %>% 
+                ggplot( aes(x=value, y=var, fill=admission)) +
+                geom_boxplot() +
+                scale_fill_manual(labels = c("OP", "Floor", "ICU"), values=c(brewer.pal(3, "Greens"))) +
+                geom_jitter(color="black", size=0.4, alpha=0.9) +
+                coord_flip() +
+                theme_minimal() +
+                theme(axis.text.x = element_text(angle = 45)) +
+                labs(title="Top 10 Features",
+                     subtitle = "COVID Positive Patients by Admission Acuity",
+                     fill="Acuity") +
+                     xlab("") +  
+                     ylab("")
+
+plot(xgb_top_jitter)
+
+```
+
+<br>
+
+### Ridge
+
+```{r, echo=FALSE, warning=FALSE, fig.width=12, fig.height=8}
+
+xgb_top_ridge <-positive %>%
+                subset(select = c("admission", xgb_top$Feature)) %>%
+                dplyr::mutate(admission = factor(dplyr::case_when(
+                               admission == 0 ~ "OP",
+                               admission == 1 ~ "Floor", 
+                               admission == 2 ~ "ICU"), 
+                       levels = c("OP", "Floor", "ICU"))) %>%
+                gather(-admission, key = "var", value = "value") %>% 
+                ggplot( aes(x=value, y=var, fill=admission)) +
+                geom_density_ridges() +
+                theme_ridges() +
+                scale_fill_manual(labels = c("OP", "Floor", "ICU"), values=c(brewer.pal(3, "Greens"))) +
+                labs(title="Top 10 Features",
+                     subtitle = "COVID Positive Patients by Admission Acuity",
+                     fill="Acuity") +
+                     xlab("") +  
+                     ylab("")
+
+plot(xgb_top_ridge)
+
+```
+
+
+<br>
+
+# Identification of COVID Positive Patients
+
+Failing to properly classify patient acuity, we may yet be able to identify COVID positive patients. We remove non-inpatient patients who have a greater portion of missing data.  
+
+```{r, }
+
+# Select admitted patients only
+covid_status <- data %>%
+                filter(floor == "TRUE" | step == "TRUE" | icu == "TRUE") 
+
+#recode admission and COVID status columns
+covid_status$admission <- base::ifelse(covid_status$floor == "TRUE", "1", 
+                               base::ifelse(covid_status$step == "TRUE", "2",
+                                            base::ifelse(covid_status$icu == "TRUE", "2", "0"))) %>% base::as.numeric()
+covid_status$COVID <- base::ifelse(covid_status$COVID == "positive", "1","0")
+
+# remove the old floor/step/icu columns, then reorder the columns to put covid target first
+covid_status <- covid_status %>% 
+                dplyr::select(-floor, 
+                       -step,
+                       -icu,
+                       -patient_id) %>%
+                dplyr::select(COVID, 
+                       everything())
+
+
+# Subset into covid stratified training and testing sets
+set.seed(333)
+split_status  <- initial_split(covid_status, 
+                        prop = 0.7, 
+                        strata = "COVID")
+
+train_s  <- training(split_status)
+test_s   <- testing(split_status)
+
+
+```
+
+
+Making slight adjustments to our recipe to target COVID status. Adding an additional imputation step using bagged decision trees to address missing data. 
+
+  
+```{r, echo=FALSE}
+
+# Double check why Urine Leuko is causing issues
+covid_status$urine_leukocytes <- NULL
+
+# specify admission as an outcome column
+dna_s <- recipe(COVID ~ ., data = covid_status) %>%
+   step_nzv(all_predictors())  %>%
+   step_bagimpute(all_predictors()) %>%
+   step_integer(matches("urine_color|urine_aspect|urine_hemoglobin")) %>%
+   step_center(all_numeric(), -all_outcomes()) %>%
+   step_scale(all_numeric(), -all_outcomes()) %>%
+   step_dummy(all_nominal(), one_hot = TRUE)
+
+   
+ 
+mrna_s <- prep(dna_s, training = train_s)
+
+# pro = processed, resulting in "pro-train", like protein, get it?
+protrain_s <- bake(mrna_s, new_data = train_s)
+protest_s <- bake(mrna_s, new_data = test_s)
+
+
+```
+
+## PCA {.tabset .tabset-fade}
+
+Principle Component Analysis is a method to reduce feature space while allowing the greatest amount of variability or information to be explained. By examining covariance across features they are combined into multiple uncorrelated subsets called principal components (PCs). The eigenvector that corresponds to the largest eigenvalue explains the greatest proportion of feature variability. The greatest covariance is the line that minimizes the total squared distance from each point to its orthagonal projection onto a line.
+
+
+```{r, echo=FALSE}
+
+# library(ggbiplot) # masks mutate, rename, summarise, arrange
+
+set.seed(333)
+pca <- prcomp(protrain_s)
+
+#summary(pca)
+
+
+```
+
+### Biplot
+
+```{r, echo=FALSE}
+
+# need to rework labels here
+
+# ggbiplot(pca,
+#          ellipse = TRUE,
+#          #choices=c(2,3), 
+#          labels=protrain_s$admission,
+#          groups=protrain_s$COVID_X1) 
+
+
+```
+
+
+### Eigenvalue Criterion 
+
+The sum of eigenvalues is equal to the number of variables entered into the PCA. eig of 1 means the pc would explain one features worth of variability. Therefore we look for the PC's which have a eigenvalue sum greater than 1. In this case, PC's 1-17. 
+
+```{r, echo=FALSE}
+
+# Compute eigenvalues
+eig <- pca$sdev %>%
+       as.vector() %>%
+       .^2
+
+# Sum of all eigenvalues equals number of variables
+#sum(eig)
+## [1] 42
+
+# Find PCs where the sum of eigenvalues is greater than or equal to 1
+which(eig >= 1)
+
+
+```
+
+### Variance Explained / Scree 
+
+Proportion of Variance Explained (PVE) identifies the optimal number of PC's based on the variability explained. Here, PVE (aka Scree plot) and CVE (Cumulative variance explained) are plotted. 
+
+```{r, echo=FALSE}
+
+plot_pca <- data.frame(PC = pca$sdev %>% seq_along(),
+                       Proportion = eig/sum(eig),
+                       Cumulative = cumsum(eig)/sum(eig)) %>%
+                       tidyr::gather(metric, Proportion, -PC) %>%
+                       ggplot(aes(PC, Proportion)) +
+                              geom_point() +
+                              facet_wrap(~ metric, ncol = 1, scales = "free")
+
+plot(plot_pca)
+
+```
+
+## Model {.tabset .tabset-fade}
+
+### Build
+
+```{r, warning=FALSE}
+
+# protrain_s <- bake(mrna_s, new_data = train_s)
+# protest_s <- bake(mrna_s, new_data = test_s)
+
+train_pca <- data.frame(covid = protrain_s$COVID_X1, pca$x)
+
+#transform preprocessed test dataframe into PCA
+test_pca <- predict(pca, newdata = protest_s)
+test_pca <- as.data.frame(test_pca)
+test_pca <- data.frame(covid = protest_s$COVID_X1, test_pca)
+
+# limit to only the first 16 PC's (per eigenvalue criterion)
+train_pca_final <- train_pca[,1:17]
+test_pca_final <- test_pca[,1:17]
+
+# create xgb matrix 
+X_train_pca <- as.matrix(train_pca_final[setdiff(names(train_pca_final), "covid")])
+Y_train_pca <- train_pca_final$covid
+X_test_pca <- as.matrix(test_pca_final[setdiff(names(test_pca_final), "covid")])
+Y_test_pca <- test_pca_final$covid
+
+
+xgb_grid_pca = expand.grid(
+                  nrounds = 1000,
+                  eta = c(0.1), #0.05, 0.01), # limited for processing brevity
+                  max_depth = c(2, 3, 4, 5, 6, 7, 8),
+                  gamma = 0,
+                  colsample_bytree=1,
+                  min_child_weight=c(1, 2, 3, 4 ,5),
+                  subsample=1)
+
+control_pca <- trainControl(method ="cv", 
+                            number = 5)
+
+
+set.seed(333)
+xgb_caret_pca <- train(x=X_train_pca, 
+                   y=as.factor(Y_train_pca), 
+                   method ='xgbTree',
+                   metric ="Accuracy",
+                   objective = "binary:logistic",
+                   #nthreads = 6,
+                   trControl = control_pca,
+                   tuneGrid = xgb_grid_pca
+                   ) 
+
+# Best tune parameters from hyper parameter grid search
+#xgb_caret_pca$results
+xgb_caret_pca$bestTune
+
+
+
+```
+
+
+### Design
+
+```{r, echo=FALSE}
+
+ggplot(xgb_caret_pca) + theme_minimal()
+
+```
+
+
+## Performance / Outcome
+
+Performance results in an accuracy of 88%, sensitivity (recall) of 94%.
+
+```{r}
+
+# prediction on the test set, with no parameters to add or adjust I'm just using the best tune selected parameters:
+test_pred_pca <- predict(xgb_caret_pca, X_test_pca)
+caret::confusionMatrix(test_pred_pca, as.factor(Y_test_pca))
+
+
+```
+
+
+
+
+
+
